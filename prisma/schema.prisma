@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String        @id @default(cuid())
+  email                String        @unique
+  name                 String?
+  avatar               String?
+  planTier             String        @default("FREE") // "FREE" | "PRO"
+  creditsUsed          Int           @default(0)      // Max 3 for FREE tier
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  generations          Generation[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+model Generation {
+  id                     String   @id @default(cuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputType              String   // "YOUTUBE" | "BLOG" | "TEXT"
+  sourceUrl              String?
+  sourceTitle            String?
+  thumbnailUrl           String?
+  originalContentSummary String?
+  tone                   String   @default("engaging")
+  
+  // Structured Asset Bundle (JSON serialized)
+  linkedinPost           String?  // JSON string: { hook, body, bulletPoints, callToAction, hashtags }
+  twitterThread          String?  // JSON array: [{ tweetNumber, content, isHook }]
+  videoScripts           String?  // JSON array: [{ hook, targetDuration, visualDirection, voiceoverScript, callToAction }]
+  seoMeta                String?  // JSON string: { metaTitle, metaDescription, keywords, slugSuggestion }
+  newsletterBrief        String?  // JSON string: { tldr, keyTakeaways, highlightQuote }
+
+  createdAt              DateTime @default(now())
+}
