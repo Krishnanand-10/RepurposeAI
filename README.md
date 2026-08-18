@@ -25,43 +25,19 @@ From a single video or article, RepurposeAI creates:
 
 ## 📐 System Architecture
 
-```
-                       ┌─────────────────────────┐
-                       │   Creator / Marketer    │
-                       └────────────┬────────────┘
-                                    │
-                                    │ Paste YouTube URL, Blog URL, Text
-                                    ▼
-                       ┌─────────────────────────┐
-    ┌─────────────────►│ RepurposeAI Next.js UI  ├───────────────────────────────┐
-    │                  └─┬──────┬─────────┬──────┘                               │
-    │                    │      │         │                                      │
-    │     Export Options │      │         │ API Request           Upgrade to Pro │
-    │                    ▼      │         ▼                                      ▼
-┌───┴───────────────────────┐   │   ┌───────────────────────────┐   ┌───────────────────────────┐
-│ Clipboard / Markdown / PDF│   │   │Content Extraction Pipeline│   │      Stripe Checkout      │
-└───────────────────────────┘   │   └─────────────┬─────────────┘   └─────────────┬─────────────┘
-                                │                 │                               │
-                                │                 │ YouTube Transcript / Article  │ Payment Webhook Event
-                                │                 ▼                               ▼
-                                │   ┌───────────────────────────┐   ┌───────────────────────────┐
-                                │   │ AI LLM Engine (Gemini API)│   │  Stripe Webhook Handler   │
-                                │   └─────────────┬─────────────┘   └─────────────┬─────────────┘
-                                │                 │                               │
-          Return Structured Assets                │                               │ Activate Pro Tier
-                                └─────────────────┘                               │
-                                        │                                         │
-                        Save to History │                                         │
-                                        ▼                                         ▼
-                               ┌────────────────────────────────────────────────────────┐
-                               │           Database (Prisma & SQLite/Postgres)          │
-                               └────────────────────────▲───────────────────────────────┘
-                                                        │
-                                                        │ Check Metered Credits
-                                                        │
-                               ┌────────────────────────┴───────────────────────┐
-                               │            Workspace & Auth Engine             │
-                               └────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Creator / Marketer] -->|Paste YouTube URL, Blog URL, or Text| B[RepurposeAI Next.js UI]
+    B --> C[Workspace & Auth Engine]
+    C -->|Check Metered Credits| D[Database - Prisma & SQLite/Postgres]
+    B -->|API Request| E[Content Extraction Pipeline]
+    E -->|YouTube Transcript / Article Scraper / Raw Text| F[AI LLM Engine - Google Gemini / Structured JSON]
+    F -->|Return Structured Assets| B
+    B -->|Save to History| D
+    B -->|Export Options| G[Clipboard / Markdown / PDF / JSON]
+    B -->|Upgrade to Pro| H[Stripe Checkout]
+    H -->|Payment Webhook Event| I[Stripe Webhook Handler]
+    I -->|Activate Pro Tier| D
 ```
 
 > 📖 For full data models and technical specifications, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.

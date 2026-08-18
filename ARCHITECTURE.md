@@ -11,45 +11,6 @@ RepurposeAI is a production-grade SaaS web platform where creators, marketers, a
 
 ## Key Features & Architecture
 
-```
-                       ┌─────────────────────────┐
-                       │   Creator / Marketer    │
-                       └────────────┬────────────┘
-                                    │
-                                    │ Paste YouTube URL, Blog URL, Text
-                                    ▼
-                       ┌─────────────────────────┐
-    ┌─────────────────►│ RepurposeAI Next.js UI  ├───────────────────────────────┐
-    │                  └─┬──────┬─────────┬──────┘                               │
-    │                    │      │         │                                      │
-    │     Export Options │      │         │ API Request           Upgrade to Pro │
-    │                    ▼      │         ▼                                      ▼
-┌───┴───────────────────────┐   │   ┌───────────────────────────┐   ┌───────────────────────────┐
-│ Clipboard / Markdown / PDF│   │   │Content Extraction Pipeline│   │      Stripe Checkout      │
-└───────────────────────────┘   │   └─────────────┬─────────────┘   └─────────────┬─────────────┘
-                                │                 │                               │
-                                │                 │ YouTube Transcript / Article  │ Payment Webhook Event
-                                │                 ▼                               ▼
-                                │   ┌───────────────────────────┐   ┌───────────────────────────┐
-                                │   │ AI LLM Engine (Gemini API)│   │  Stripe Webhook Handler   │
-                                │   └─────────────┬─────────────┘   └─────────────┬─────────────┘
-                                │                 │                               │
-          Return Structured Assets                │                               │ Activate Pro Tier
-                                └─────────────────┘                               │
-                                        │                                         │
-                        Save to History │                                         │
-                                        ▼                                         ▼
-                               ┌────────────────────────────────────────────────────────┐
-                               │           Database (Prisma & SQLite/Postgres)          │
-                               └────────────────────────▲───────────────────────────────┘
-                                                        │
-                                                        │ Check Metered Credits
-                                                        │
-                               ┌────────────────────────┴───────────────────────┐
-                               │            Workspace & Auth Engine             │
-                               └────────────────────────────────────────────────┘
-```
-
 ```mermaid
 graph TD
     A[Creator / Marketer] -->|Paste YouTube URL, Blog URL, or Text| B[RepurposeAI Next.js UI]
