@@ -9,6 +9,7 @@ interface UpgradeModalProps {
   onClose: () => void;
   userEmail: string;
   onSimulateSuccess?: () => void;
+  onSimulatePro?: () => void;
 }
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({
@@ -16,6 +17,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   onClose,
   userEmail,
   onSimulateSuccess,
+  onSimulatePro,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -35,17 +37,12 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userEmail }),
+        body: JSON.stringify({ email: userEmail, userEmail }),
       });
       const data = await res.json();
 
       if (data.url) {
-        if (data.isMock) {
-          // If in test sandbox mode, handle simulation directly
-          await handleSimulatePro();
-        } else {
-          window.location.href = data.url;
-        }
+        window.location.href = data.url;
       }
     } catch (err) {
       console.error('Stripe checkout error:', err);
@@ -55,12 +52,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   };
 
   const handleSimulatePro = async () => {
+    if (onSimulatePro) {
+      onSimulatePro();
+      return;
+    }
     try {
       setIsSimulating(true);
       const res = await fetch('/api/dev/simulate-pro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail, planTier: 'PRO' }),
+        body: JSON.stringify({ email: userEmail, setPro: true }),
       });
       if (res.ok) {
         try {

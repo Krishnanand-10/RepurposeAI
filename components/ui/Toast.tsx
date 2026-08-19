@@ -4,7 +4,7 @@ import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 export interface ToastProps {
   message: string;
   type?: 'success' | 'error' | 'info';
-  isVisible: boolean;
+  isVisible?: boolean;
   onClose: () => void;
   duration?: number;
 }
@@ -12,7 +12,7 @@ export interface ToastProps {
 export const Toast: React.FC<ToastProps> = ({
   message,
   type = 'success',
-  isVisible,
+  isVisible = true,
   onClose,
   duration = 3000,
 }) => {

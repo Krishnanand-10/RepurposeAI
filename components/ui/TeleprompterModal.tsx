@@ -5,20 +5,27 @@ import { Modal } from './Modal';
 interface TeleprompterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  scriptContent: string;
-  hookTitle: string;
+  scriptContent?: string;
+  scriptText?: string;
+  hookTitle?: string;
+  hookText?: string;
 }
 
 export const TeleprompterModal: React.FC<TeleprompterModalProps> = ({
   isOpen,
   onClose,
   scriptContent,
+  scriptText,
   hookTitle,
+  hookText,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(2); // 1 to 5
   const [fontSize, setFontSize] = useState(28); // 20 to 48
   const textRef = useRef<HTMLDivElement>(null);
+
+  const displayScript = scriptContent || scriptText || '';
+  const displayHook = hookTitle || hookText || '';
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -45,7 +52,7 @@ export const TeleprompterModal: React.FC<TeleprompterModalProps> = ({
         
         {/* Hook indicator */}
         <div className="px-4 py-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-300 text-xs font-semibold">
-          Hook: "{hookTitle}"
+          Hook: "{displayHook}"
         </div>
 
         {/* Teleprompter Scrolling Viewport */}
@@ -55,7 +62,7 @@ export const TeleprompterModal: React.FC<TeleprompterModalProps> = ({
           style={{ fontSize: `${fontSize}px` }}
         >
           <div className="py-20 text-center whitespace-pre-line text-zinc-100">
-            {scriptContent}
+            {displayScript}
           </div>
         </div>
 
