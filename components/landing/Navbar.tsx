@@ -35,25 +35,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onLaunchStudio, onScrollToPricin
           </button>
         </nav>
 
-        {/* Action Buttons */}
+        {/* Action Button */}
         <div className="flex items-center gap-3">
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onClick={onLaunchStudio}
-            className="text-zinc-300 hover:text-white"
+            className="text-xs font-semibold px-4 py-2"
           >
-            Sign In
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onLaunchStudio}
-            className="shadow-md shadow-indigo-600/25"
-            rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
-          >
-            Launch Studio
+            <span>Sign In</span>
           </Button>
         </div>
 

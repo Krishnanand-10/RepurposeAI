@@ -5,10 +5,9 @@ import { InteractivePreview } from './InteractivePreview';
 
 interface HeroProps {
   onStartFreeTrial: () => void;
-  onViewLiveDemo: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onStartFreeTrial, onViewLiveDemo }) => {
+export const Hero: React.FC<HeroProps> = ({ onStartFreeTrial }) => {
   return (
     <section className="relative pt-12 pb-20 overflow-hidden">
       
@@ -37,25 +36,15 @@ export const Hero: React.FC<HeroProps> = ({ onStartFreeTrial, onViewLiveDemo }) 
           Paste a YouTube link or blog post. Instantly get a LinkedIn summary, X thread, video hooks, and SEO meta descriptions ready to publish.
         </p>
 
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+        {/* Primary Single CTA */}
+        <div className="flex items-center justify-center pt-2">
           <Button
             size="lg"
             onClick={onStartFreeTrial}
-            className="w-full sm:w-auto px-8 py-4 text-base font-bold shadow-xl shadow-indigo-600/30"
+            className="w-full sm:w-auto px-10 py-4 text-base font-bold shadow-xl shadow-indigo-600/30"
             rightIcon={<ArrowRight className="w-4 h-4" />}
           >
             <span>Start Free Trial (3 Generations)</span>
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={onViewLiveDemo}
-            className="w-full sm:w-auto px-6 py-4 text-base font-semibold"
-            leftIcon={<Play className="w-4 h-4 text-zinc-400 fill-zinc-400" />}
-          >
-            <span>View Live Demo Studio</span>
           </Button>
         </div>
 

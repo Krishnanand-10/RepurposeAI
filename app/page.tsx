@@ -50,7 +50,6 @@ export default function LandingPage() {
       {/* Hero Section */}
       <Hero
         onStartFreeTrial={handleLaunchStudio}
-        onViewLiveDemo={handleLaunchStudio}
       />
 
       {/* Section 2: How It Works */}
@@ -209,7 +208,7 @@ export default function LandingPage() {
               className="px-8 py-4 text-base font-bold shadow-2xl shadow-indigo-600/40"
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
-              <span>Launch Free Studio Now</span>
+              <span>Get Started Free</span>
             </Button>
           </div>
         </div>
@@ -234,7 +233,7 @@ export default function LandingPage() {
               Pricing
             </button>
             <button onClick={handleLaunchStudio} className="text-indigo-400 hover:text-indigo-300 font-semibold">
-              Launch Studio &rarr;
+              Get Started &rarr;
             </button>
           </div>
         </div>
