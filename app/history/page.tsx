@@ -54,11 +54,38 @@ export default function HistoryPage() {
   const fetchGenerations = async (userEmail = 'creator@repurpose.ai') => {
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/generations?email=${encodeURIComponent(userEmail)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setGenerations(data.generations || []);
+
+      let apiGenerations: GeneratedAssetBundle[] = [];
+      try {
+        const res = await fetch(`/api/generations?email=${encodeURIComponent(userEmail)}`);
+        if (res.ok) {
+          const data = await res.json();
+          apiGenerations = data.generations || [];
+        }
+      } catch (err) {
+        console.warn('API history fetch error:', err);
       }
+
+      // Read from browser persistent cache
+      let localGenerations: GeneratedAssetBundle[] = [];
+      if (typeof window !== 'undefined') {
+        try {
+          localGenerations = JSON.parse(localStorage.getItem('repurpose_history_cache') || '[]');
+        } catch (e) {
+          console.warn('Local history read error:', e);
+        }
+      }
+
+      // Merge and deduplicate
+      const mergedMap = new Map<string, GeneratedAssetBundle>();
+      for (const item of [...localGenerations, ...apiGenerations]) {
+        const key = item.id || item.title || item.summary;
+        if (key && !mergedMap.has(key)) {
+          mergedMap.set(key, item);
+        }
+      }
+
+      setGenerations(Array.from(mergedMap.values()));
     } catch (err) {
       console.warn('Failed to load history:', err);
     } finally {
@@ -71,14 +98,25 @@ export default function HistoryPage() {
     if (!confirm('Are you sure you want to delete this generation from your library?')) return;
 
     try {
-      const res = await fetch(`/api/generations/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setGenerations((prev) => prev.filter((g) => g.id !== id));
-        if (selectedBundle?.id === id) {
-          setSelectedBundle(null);
-        }
-        showToast('Generation removed from library');
+      // Remove from browser local storage cache
+      if (typeof window !== 'undefined') {
+        try {
+          const existing = JSON.parse(localStorage.getItem('repurpose_history_cache') || '[]');
+          const updated = existing.filter((item: any) => item.id !== id && item.title !== selectedBundle?.title);
+          localStorage.setItem('repurpose_history_cache', JSON.stringify(updated));
+        } catch (e) {}
       }
+
+      // Remove from server API database if available
+      try {
+        await fetch(`/api/generations/${id}`, { method: 'DELETE' });
+      } catch (e) {}
+
+      setGenerations((prev) => prev.filter((g) => g.id !== id));
+      if (selectedBundle?.id === id) {
+        setSelectedBundle(null);
+      }
+      showToast('Generation removed from library');
     } catch (err) {
       console.error('Delete error:', err);
     }

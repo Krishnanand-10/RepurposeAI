@@ -138,6 +138,23 @@ function DashboardContent() {
 
             setGeneratedBundle(data);
             setCurrentStep('completed');
+
+            // Save immediately to browser persistent history cache
+            if (typeof window !== 'undefined') {
+              try {
+                const existing = JSON.parse(localStorage.getItem('repurpose_history_cache') || '[]');
+                const itemToSave = {
+                  ...data,
+                  id: data.id || `gen_${Date.now()}`,
+                  createdAt: data.createdAt || new Date().toISOString(),
+                };
+                const filtered = existing.filter((item: any) => item.id !== itemToSave.id && item.title !== itemToSave.title);
+                localStorage.setItem('repurpose_history_cache', JSON.stringify([itemToSave, ...filtered]));
+              } catch (e) {
+                console.warn('LocalStorage save error:', e);
+              }
+            }
+
             await fetchSession();
 
             confetti({
