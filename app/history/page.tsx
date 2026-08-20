@@ -44,7 +44,7 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | 'YOUTUBE' | 'BLOG' | 'TEXT'>('ALL');
-  
+
   // Selected generation for detail modal viewer
   const [selectedBundle, setSelectedBundle] = useState<GeneratedAssetBundle | null>(null);
   const [isTeleprompterOpen, setIsTeleprompterOpen] = useState(false);
@@ -111,7 +111,7 @@ export default function HistoryPage() {
 
         return (
           <div className="space-y-8">
-            
+
             {/* Header Banner */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
               <div>
@@ -154,11 +154,10 @@ export default function HistoryPage() {
                   <button
                     key={type}
                     onClick={() => setFilterType(type)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                      filterType === type
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${filterType === type
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
-                    }`}
+                      }`}
                   >
                     {type === 'ALL' ? 'All Formats' : type}
                   </button>
@@ -199,10 +198,10 @@ export default function HistoryPage() {
                 {filtered.map((gen) => {
                   const dateFormatted = gen.createdAt
                     ? new Date(gen.createdAt).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })
                     : 'Recent';
 
                   const displayTitle = gen.title && gen.title !== 'Untitled Generation'
@@ -299,7 +298,7 @@ export default function HistoryPage() {
                 maxWidth="2xl"
               >
                 <div className="space-y-6 max-h-[75vh] overflow-y-auto pr-1">
-                  
+
                   {/* Summary Header & Export Toolbar */}
                   <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3">
                     <p className="text-xs text-zinc-300 leading-relaxed">

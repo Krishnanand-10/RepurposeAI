@@ -196,7 +196,7 @@ function DashboardContent() {
 
             {/* Studio Workspace Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
-              
+
               {/* Left Column: Input Form Studio (5 Cols on large screen) */}
               <div className="lg:col-span-5 space-y-6">
                 <Card className="p-6 border-zinc-800/80 bg-zinc-900/60 backdrop-blur-md sticky top-6">
