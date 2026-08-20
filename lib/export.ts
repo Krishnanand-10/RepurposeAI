@@ -387,6 +387,75 @@ export async function exportBundleAsPDF(bundle: GeneratedAssetBundle): Promise<v
 }
 
 /**
+ * Export bundle as a Social Media Scheduler CSV (Buffer, Hootsuite, Notion)
+ */
+export function exportBundleAsCSV(bundle: GeneratedAssetBundle): void {
+  const escapeCsv = (str: string) => `"${(str || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+
+  const headers = ['Platform', 'Post_Type', 'Content', 'Hook', 'Hashtags_Or_Keywords', 'Notes'];
+
+  const rows: string[][] = [
+    // 1. LinkedIn Post
+    [
+      'LinkedIn',
+      'Post',
+      `${bundle.linkedinPost.hook}\n\n${bundle.linkedinPost.body}\n\nKey Takeaways:\n${bundle.linkedinPost.bulletPoints.map((b) => `• ${b}`).join('\n')}\n\n${bundle.linkedinPost.callToAction}`,
+      bundle.linkedinPost.hook,
+      bundle.linkedinPost.hashtags.join(' '),
+      'Publish with high-resolution carousel or image banner',
+    ],
+    // 2. Twitter Thread
+    ...bundle.twitterThread.map((t) => [
+      'Twitter / X',
+      `Tweet ${t.tweetNumber}/${bundle.twitterThread.length}`,
+      t.content,
+      t.isHook ? 'Thread Opening Hook' : '',
+      '',
+      'Publish as sequential thread with 30s delays',
+    ]),
+    // 3. Short-Form Video Scripts
+    ...bundle.videoScripts.map((v, idx) => [
+      'TikTok / Reels / Shorts',
+      `Video Script Concept #${idx + 1}`,
+      `Hook: ${v.hook}\n\nVoiceover: ${v.voiceoverScript}\n\nCTA: ${v.callToAction}`,
+      v.hook,
+      '',
+      `Visual Cue: ${v.visualDirection} (Est: ${v.targetDuration})`,
+    ]),
+    // 4. Newsletter
+    [
+      'Newsletter / Email',
+      'Executive Brief',
+      `TL;DR: ${bundle.newsletterBrief.tldr}\n\nTakeaways:\n${bundle.newsletterBrief.keyTakeaways.map((k) => `• ${k}`).join('\n')}\n\nQuote: "${bundle.newsletterBrief.highlightQuote}"`,
+      bundle.newsletterBrief.tldr,
+      '',
+      'Add to weekly digest or Substack post',
+    ],
+    // 5. SEO Meta
+    [
+      'Blog / Website',
+      'SEO Metadata',
+      `Title: ${bundle.seoMeta.metaTitle}\nDescription: ${bundle.seoMeta.metaDescription}`,
+      bundle.seoMeta.metaTitle,
+      bundle.seoMeta.keywords.join(', '),
+      `Slug: /${bundle.seoMeta.slugSuggestion}`,
+    ],
+  ];
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map((row) => row.map(escapeCsv).join(',')),
+  ].join('\n');
+
+  const slug = (bundle.title || 'scheduler')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .slice(0, 30);
+
+  downloadFile(csvContent, `repurpose-scheduler-${slug}.csv`, 'text/csv;charset=utf-8');
+}
+
+/**
  * 1-Click copy to clipboard helper
  */
 export async function copyToClipboard(text: string): Promise<boolean> {

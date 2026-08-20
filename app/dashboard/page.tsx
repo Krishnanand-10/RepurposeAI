@@ -15,6 +15,7 @@ import {
   History,
   ShieldCheck,
   AlertCircle,
+  Table,
 } from 'lucide-react';
 import { AppHeader } from '@/components/dashboard/AppHeader';
 import { InputForm } from '@/components/dashboard/InputForm';
@@ -37,6 +38,7 @@ import {
   exportBundleAsMarkdown,
   exportBundleAsJSON,
   exportBundleAsPDF,
+  exportBundleAsCSV,
   copyToClipboard,
   formatBundleToMarkdown,
 } from '@/lib/export';
@@ -196,6 +198,12 @@ function DashboardContent() {
     showToast('Generating executive PDF...');
     await exportBundleAsPDF(generatedBundle);
     showToast('Styled PDF downloaded!');
+  };
+
+  const handleExportCSV = () => {
+    if (!generatedBundle) return;
+    exportBundleAsCSV(generatedBundle);
+    showToast('Scheduler CSV file downloaded!');
   };
 
   const handleCopyAll = async () => {
@@ -391,6 +399,15 @@ function DashboardContent() {
                     >
                       <FileCode className="w-3.5 h-3.5 text-amber-400" />
                       <span>JSON</span>
+                    </button>
+
+                    <button
+                      onClick={handleExportCSV}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-medium transition-colors"
+                      title="Download Social Media Scheduler CSV (Buffer/Notion)"
+                    >
+                      <Table className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Scheduler CSV</span>
                     </button>
                   </div>
                 </div>

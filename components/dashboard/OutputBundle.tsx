@@ -10,9 +10,11 @@ import {
   Hash,
   ArrowRight,
   Sparkles,
+  Layers,
 } from 'lucide-react';
 import { GeneratedAssetBundle } from '@/lib/types';
 import { AssetCard } from './AssetCard';
+import { CarouselStudio } from './CarouselStudio';
 
 interface OutputBundleProps {
   bundle: GeneratedAssetBundle;
@@ -25,7 +27,7 @@ export const OutputBundle: React.FC<OutputBundleProps> = ({
   onOpenTeleprompter,
   onCopiedToast,
 }) => {
-  const [activeTab, setActiveTab] = useState<'linkedin' | 'twitter' | 'video' | 'seo' | 'newsletter'>('linkedin');
+  const [activeTab, setActiveTab] = useState<'linkedin' | 'carousel' | 'twitter' | 'video' | 'seo' | 'newsletter'>('linkedin');
 
   // Format LinkedIn copy text
   const linkedinFullText = `${bundle.linkedinPost.hook}\n\n${bundle.linkedinPost.body}\n\nKey Takeaways:\n${bundle.linkedinPost.bulletPoints.map((b) => `• ${b}`).join('\n')}\n\n${bundle.linkedinPost.callToAction}\n\n${bundle.linkedinPost.hashtags.join(' ')}`;
@@ -56,6 +58,18 @@ export const OutputBundle: React.FC<OutputBundleProps> = ({
         >
           <Linkedin className="w-3.5 h-3.5" />
           <span>LinkedIn Post</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('carousel')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+            activeTab === 'carousel'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5 text-indigo-300" />
+          <span>Carousel Deck 🎨</span>
         </button>
 
         <button
@@ -165,7 +179,12 @@ export const OutputBundle: React.FC<OutputBundleProps> = ({
         </AssetCard>
       )}
 
-      {/* Tab 2: Twitter/X Thread */}
+      {/* Tab 2: Visual Carousel Slide Deck */}
+      {activeTab === 'carousel' && (
+        <CarouselStudio bundle={bundle} onToast={onCopiedToast} />
+      )}
+
+      {/* Tab 3: Twitter/X Thread */}
       {activeTab === 'twitter' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
