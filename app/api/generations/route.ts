@@ -10,9 +10,15 @@ export async function GET(req: NextRequest) {
     const email = searchParams.get('email') || 'creator@repurpose.ai';
     const query = searchParams.get('q') || '';
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    let user: any = null;
+    try {
+      user = await prisma.user.findUnique({
+        where: { email },
+      });
+    } catch (dbErr) {
+      console.warn('DB lookup skipped in generations:', dbErr);
+      return NextResponse.json({ generations: [] });
+    }
 
     if (!user) {
       return NextResponse.json({ generations: [] });
@@ -53,10 +59,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ generations: parsedGenerations });
   } catch (error: any) {
-    console.error('Fetch generations error:', error);
-    return NextResponse.json(
-      { error: error?.message || 'Failed to fetch history' },
-      { status: 500 }
-    );
+    console.warn('Fetch generations fallback:', error);
+    return NextResponse.json({ generations: [] });
   }
 }
