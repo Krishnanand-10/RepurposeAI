@@ -191,9 +191,10 @@ function DashboardContent() {
     showToast('JSON file downloaded!');
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!generatedBundle) return;
-    exportBundleAsPDF(generatedBundle);
+    showToast('Generating executive PDF...');
+    await exportBundleAsPDF(generatedBundle);
     showToast('Styled PDF downloaded!');
   };
 

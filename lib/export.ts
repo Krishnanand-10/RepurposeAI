@@ -120,142 +120,270 @@ export function exportBundleAsJSON(bundle: GeneratedAssetBundle): void {
   downloadFile(jsonStr, `repurpose-${slug}.json`, 'application/json;charset=utf-8');
 }
 
+import html2canvas from 'html2canvas';
+
 /**
- * Export bundle as a styled PDF document using jsPDF
+ * Clean string for standard jsPDF ASCII rendering fallback
  */
-export function exportBundleAsPDF(bundle: GeneratedAssetBundle): void {
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'pt',
-    format: 'a4',
-  });
+function sanitizeForAsciiPdf(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+    .replace(/[^\x00-\x7F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 40;
-  const maxWidth = pageWidth - margin * 2;
-  let cursorY = margin;
-
-  const checkPageBreak = (neededHeight: number) => {
-    if (cursorY + neededHeight > doc.internal.pageSize.getHeight() - margin) {
-      doc.addPage();
-      cursorY = margin;
-    }
-  };
-
-  // Header Banner
-  doc.setFillColor(15, 23, 42); // Dark slate
-  doc.rect(0, 0, pageWidth, 70, 'F');
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text('RepurposeAI — Distribution Bundle', margin, 42);
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, margin, 58);
-
-  cursorY = 95;
-
-  // Title
-  doc.setTextColor(15, 23, 42);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  const titleLines = doc.splitTextToSize(bundle.title, maxWidth);
-  doc.text(titleLines, margin, cursorY);
-  cursorY += titleLines.length * 20 + 10;
-
-  // Summary
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(10);
-  doc.setTextColor(71, 85, 105);
-  const summaryLines = doc.splitTextToSize(bundle.summary, maxWidth);
-  doc.text(summaryLines, margin, cursorY);
-  cursorY += summaryLines.length * 14 + 20;
-
-  const renderSection = (heading: string, contentLines: string[]) => {
-    checkPageBreak(40 + contentLines.length * 14);
-
-    doc.setFillColor(241, 245, 249);
-    doc.roundedRect(margin, cursorY - 12, maxWidth, 24, 4, 4, 'F');
-
-    doc.setTextColor(99, 102, 241); // Indigo
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text(heading, margin + 8, cursorY + 4);
-    cursorY += 28;
-
-    doc.setTextColor(30, 41, 59);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-
-    contentLines.forEach((line) => {
-      const wrapped = doc.splitTextToSize(line, maxWidth - 16);
-      checkPageBreak(wrapped.length * 13);
-      doc.text(wrapped, margin + 8, cursorY);
-      cursorY += wrapped.length * 13 + 4;
-    });
-
-    cursorY += 15;
-  };
-
-  // 1. LinkedIn
-  renderSection('💼 LinkedIn Post', [
-    `HOOK: ${bundle.linkedinPost.hook}`,
-    '',
-    bundle.linkedinPost.body,
-    '',
-    'KEY POINTS:',
-    ...bundle.linkedinPost.bulletPoints.map((b) => `• ${b}`),
-    '',
-    `CTA: ${bundle.linkedinPost.callToAction}`,
-    `HASHTAGS: ${bundle.linkedinPost.hashtags.join(' ')}`,
-  ]);
-
-  // 2. Twitter Thread
-  renderSection(
-    `🐦 Twitter/X Thread (${bundle.twitterThread.length} Tweets)`,
-    bundle.twitterThread.map(
-      (t) => `[Tweet ${t.tweetNumber}/${bundle.twitterThread.length}]\n${t.content}\n`
-    )
-  );
-
-  // 3. Video Scripts
-  renderSection(
-    '🎬 Short-Form Video Scripts (Reels / TikTok)',
-    bundle.videoScripts.flatMap((v, idx) => [
-      `--- Concept #${idx + 1} (${v.targetDuration}) ---`,
-      `Hook: "${v.hook}"`,
-      `Visuals: ${v.visualDirection}`,
-      `Voiceover: ${v.voiceoverScript}`,
-      `CTA: "${v.callToAction}"`,
-      '',
-    ])
-  );
-
-  // 4. SEO & Meta
-  renderSection('🔍 SEO Meta Pack', [
-    `Title: ${bundle.seoMeta.metaTitle}`,
-    `Description: ${bundle.seoMeta.metaDescription}`,
-    `Suggested Slug: /${bundle.seoMeta.slugSuggestion}`,
-    `Keywords: ${bundle.seoMeta.keywords.join(', ')}`,
-  ]);
-
-  // 5. Newsletter
-  renderSection('📧 Newsletter Executive Brief', [
-    `TL;DR: ${bundle.newsletterBrief.tldr}`,
-    '',
-    'Key Takeaways:',
-    ...bundle.newsletterBrief.keyTakeaways.map((k) => `• ${k}`),
-    '',
-    `Quote: "${bundle.newsletterBrief.highlightQuote}"`,
-  ]);
-
-  const slug = bundle.title
+/**
+ * Export bundle as a high-fidelity styled PDF document using html2canvas & jsPDF
+ */
+export async function exportBundleAsPDF(bundle: GeneratedAssetBundle): Promise<void> {
+  const slug = (bundle.title || 'distribution-bundle')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .slice(0, 30);
-  doc.save(`repurpose-${slug}.pdf`);
+    .slice(0, 35);
+  const filename = `repurpose-${slug}.pdf`;
+
+  if (typeof window === 'undefined') return;
+
+  try {
+    // 1. Create a styled offscreen container for high-res PDF rendering
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-99999px';
+    container.style.top = '0';
+    container.style.width = '800px';
+    container.style.backgroundColor = '#09090b'; // dark slate theme matching app
+    container.style.color = '#f4f4f5';
+    container.style.fontFamily = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    container.style.padding = '40px 48px';
+    container.style.boxSizing = 'border-box';
+    container.style.lineHeight = '1.6';
+
+    const dateStr = bundle.createdAt
+      ? new Date(bundle.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })
+      : new Date().toLocaleDateString(undefined, { dateStyle: 'medium' });
+
+    container.innerHTML = `
+      <!-- Header Banner -->
+      <div style="border-bottom: 2px solid #27272a; padding-bottom: 24px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <div style="width: 28px; height: 28px; background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; color: white;">✦</div>
+            <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff;">Repurpose<span style="color: #818cf8;">AI</span></span>
+            <span style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; margin-left: 6px;">Executive Content Bundle</span>
+          </div>
+          <p style="font-size: 11px; color: #71717a; margin: 0;">Automated Multi-Platform Distribution Package</p>
+        </div>
+        <div style="text-align: right; font-size: 11px; color: #a1a1aa;">
+          <div style="font-weight: 600; color: #e4e4e7;">Date: ${dateStr}</div>
+          <div style="margin-top: 2px; color: #818cf8;">Format: ${bundle.inputType} &bull; ${bundle.tone.toUpperCase()}</div>
+        </div>
+      </div>
+
+      <!-- Source Title & Summary Card -->
+      <div style="background: rgba(24, 24, 27, 0.85); border: 1px solid #27272a; border-left: 4px solid #6366f1; border-radius: 12px; padding: 20px; margin-bottom: 28px;">
+        <h1 style="font-size: 20px; font-weight: 800; color: #ffffff; margin: 0 0 10px 0; line-height: 1.3;">${bundle.title}</h1>
+        <p style="font-size: 12.5px; color: #d4d4d8; margin: 0 0 8px 0; line-height: 1.5;">${bundle.summary}</p>
+        ${bundle.sourceUrl ? `<p style="font-size: 10.5px; color: #6366f1; margin: 0; word-break: break-all;">Source: ${bundle.sourceUrl}</p>` : ''}
+      </div>
+
+      <!-- 1. LinkedIn Post Section -->
+      <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #27272a;">
+          <span style="background: #0077b5; color: white; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">LinkedIn Post</span>
+          <span style="font-size: 13px; font-weight: 700; color: #ffffff;">Viral Feed Format</span>
+        </div>
+        <div style="background: #09090b; border-left: 3px solid #0077b5; padding: 12px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; color: #ffffff; margin-bottom: 14px; line-height: 1.4;">
+          ${bundle.linkedinPost.hook}
+        </div>
+        <div style="font-size: 12px; color: #d4d4d8; white-space: pre-line; margin-bottom: 14px; line-height: 1.6;">
+          ${bundle.linkedinPost.body}
+        </div>
+        <div style="background: rgba(39, 39, 42, 0.4); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+          <div style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 6px;">Key Points:</div>
+          <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #e4e4e7;">
+            ${bundle.linkedinPost.bulletPoints.map((b) => `<li style="margin-bottom: 4px;">${b}</li>`).join('')}
+          </ul>
+        </div>
+        <div style="font-size: 12px; font-weight: 600; color: #818cf8; margin-bottom: 10px;">${bundle.linkedinPost.callToAction}</div>
+        <div style="font-size: 11px; color: #60a5fa;">${bundle.linkedinPost.hashtags.join(' ')}</div>
+      </div>
+
+      <!-- 2. Twitter / X Thread Section -->
+      <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #27272a;">
+          <span style="background: #000000; border: 1px solid #3f3f46; color: white; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">X / Twitter Thread</span>
+          <span style="font-size: 13px; font-weight: 700; color: #ffffff;">${bundle.twitterThread.length} Connected Tweets</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          ${bundle.twitterThread
+            .map(
+              (t) => `
+            <div style="background: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 12px 14px;">
+              <div style="font-size: 10px; font-weight: 700; color: ${t.isHook ? '#818cf8' : '#71717a'}; margin-bottom: 4px; text-transform: uppercase;">
+                ${t.isHook ? '🎯 Hook Tweet' : `Tweet ${t.tweetNumber} of ${bundle.twitterThread.length}`}
+              </div>
+              <div style="font-size: 12px; color: #f4f4f5; line-height: 1.5; white-space: pre-line;">${t.content}</div>
+            </div>`
+            )
+            .join('')}
+        </div>
+      </div>
+
+      <!-- 3. Short-Form Video Scripts Section -->
+      <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #27272a;">
+          <span style="background: #ec4899; color: white; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">Short-Form Scripts</span>
+          <span style="font-size: 13px; font-weight: 700; color: #ffffff;">TikTok &bull; Reels &bull; Shorts</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          ${bundle.videoScripts
+            .map(
+              (v, idx) => `
+            <div style="background: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 11px; font-weight: 700; color: #f472b6;">Concept #${idx + 1}</span>
+                <span style="background: #27272a; color: #d4d4d8; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px;">⏱️ ${v.targetDuration}</span>
+              </div>
+              <div style="font-size: 12.5px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">"${v.hook}"</div>
+              <div style="background: rgba(39, 39, 42, 0.6); padding: 8px 10px; border-radius: 6px; font-size: 11px; color: #a1a1aa; margin-bottom: 8px;">
+                <strong style="color: #cbd5e1;">🎬 Visual Cue:</strong> ${v.visualDirection}
+              </div>
+              <div style="font-size: 11.5px; color: #e4e4e7; line-height: 1.5; margin-bottom: 8px;">
+                <strong style="color: #cbd5e1;">🎙️ Voiceover:</strong> ${v.voiceoverScript}
+              </div>
+              <div style="font-size: 11px; font-weight: 600; color: #34d399;">👉 CTA: "${v.callToAction}"</div>
+            </div>`
+            )
+            .join('')}
+        </div>
+      </div>
+
+      <!-- 4. SEO & Newsletter Grid Section -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        
+        <!-- SEO Card -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 18px;">
+          <div style="font-size: 12px; font-weight: 700; color: #38bdf8; margin-bottom: 10px; text-transform: uppercase;">🔍 SEO Metadata</div>
+          <div style="font-size: 11.5px; font-weight: 600; color: #ffffff; margin-bottom: 6px;">${bundle.seoMeta.metaTitle}</div>
+          <div style="font-size: 11px; color: #a1a1aa; margin-bottom: 8px; line-height: 1.4;">${bundle.seoMeta.metaDescription}</div>
+          <div style="font-size: 10.5px; color: #818cf8; margin-bottom: 6px;">Slug: /${bundle.seoMeta.slugSuggestion}</div>
+          <div style="font-size: 10px; color: #71717a;">Keywords: ${bundle.seoMeta.keywords.join(', ')}</div>
+        </div>
+
+        <!-- Newsletter Card -->
+        <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 18px;">
+          <div style="font-size: 12px; font-weight: 700; color: #fbbf24; margin-bottom: 10px; text-transform: uppercase;">📬 Newsletter Brief</div>
+          <div style="font-size: 11px; color: #e4e4e7; margin-bottom: 8px; line-height: 1.4;"><strong style="color: #fbbf24;">TL;DR:</strong> ${bundle.newsletterBrief.tldr}</div>
+          <div style="font-size: 10.5px; color: #a1a1aa; margin-bottom: 8px;">
+            ${bundle.newsletterBrief.keyTakeaways.map((t) => `<div>&bull; ${t}</div>`).join('')}
+          </div>
+          <div style="background: #09090b; border-left: 2px solid #fbbf24; padding: 6px 8px; border-radius: 4px; font-size: 11px; font-style: italic; color: #fde68a;">
+            "${bundle.newsletterBrief.highlightQuote}"
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="text-align: center; border-top: 1px solid #27272a; padding-top: 16px; font-size: 10px; color: #71717a;">
+        Generated by RepurposeAI &bull; Ready for Omni-Channel Publishing
+      </div>
+    `;
+
+    document.body.appendChild(container);
+
+    // 2. Render high-DPI canvas
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#09090b',
+    });
+
+    document.body.removeChild(container);
+
+    // 3. Convert canvas to multi-page A4 PDF
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+    const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pdfHeight;
+    }
+
+    pdf.save(filename);
+  } catch (error) {
+    console.warn('html2canvas PDF generation failed, using clean ASCII vector fallback:', error);
+
+    // Vector Fallback with pure ASCII sanitization (prevents garbled UTF-8 surrogate characters)
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 40;
+    const maxWidth = pageWidth - margin * 2;
+    let cursorY = margin;
+
+    const checkBreak = (h: number) => {
+      if (cursorY + h > doc.internal.pageSize.getHeight() - margin) {
+        doc.addPage();
+        cursorY = margin;
+      }
+    };
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageWidth, 60, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('RepurposeAI - Distribution Bundle', margin, 38);
+
+    cursorY = 85;
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(14);
+    const titleLines = doc.splitTextToSize(sanitizeForAsciiPdf(bundle.title), maxWidth);
+    doc.text(titleLines, margin, cursorY);
+    cursorY += titleLines.length * 18 + 10;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    const sumLines = doc.splitTextToSize(sanitizeForAsciiPdf(bundle.summary), maxWidth);
+    doc.text(sumLines, margin, cursorY);
+    cursorY += sumLines.length * 14 + 15;
+
+    const printBlock = (label: string, text: string) => {
+      checkBreak(40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(79, 70, 229);
+      doc.text(label, margin, cursorY);
+      cursorY += 16;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(30, 41, 59);
+      const lines = doc.splitTextToSize(sanitizeForAsciiPdf(text), maxWidth);
+      checkBreak(lines.length * 12 + 10);
+      doc.text(lines, margin, cursorY);
+      cursorY += lines.length * 12 + 15;
+    };
+
+    printBlock('[LinkedIn Post]', `${bundle.linkedinPost.hook}\n\n${bundle.linkedinPost.body}\n\nKey Points:\n${bundle.linkedinPost.bulletPoints.map((b) => `- ${b}`).join('\n')}\n\nCTA: ${bundle.linkedinPost.callToAction}\n${bundle.linkedinPost.hashtags.join(' ')}`);
+    printBlock('[Twitter Thread]', bundle.twitterThread.map((t) => `(${t.tweetNumber}/${bundle.twitterThread.length}) ${t.content}`).join('\n\n'));
+    printBlock('[Video Scripts]', bundle.videoScripts.map((v, i) => `Concept #${i + 1} (${v.targetDuration})\nHook: ${v.hook}\nVisual: ${v.visualDirection}\nVoiceover: ${v.voiceoverScript}\nCTA: ${v.callToAction}`).join('\n\n'));
+    printBlock('[SEO Package]', `Title: ${bundle.seoMeta.metaTitle}\nDesc: ${bundle.seoMeta.metaDescription}\nSlug: /${bundle.seoMeta.slugSuggestion}\nKeywords: ${bundle.seoMeta.keywords.join(', ')}`);
+    printBlock('[Newsletter Brief]', `TLDR: ${bundle.newsletterBrief.tldr}\n\nKey Takeaways:\n${bundle.newsletterBrief.keyTakeaways.map((t) => `- ${t}`).join('\n')}\n\nQuote: "${bundle.newsletterBrief.highlightQuote}"`);
+
+    doc.save(filename);
+  }
 }
 
 /**
