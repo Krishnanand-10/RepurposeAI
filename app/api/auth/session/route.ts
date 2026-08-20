@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     }
 
     const isPro = user.planTier === 'PRO';
-    const creditsMax = isPro ? Infinity : 3;
+    const creditsMax = isPro ? 999999 : 3;
 
     return NextResponse.json({
       id: user.id,
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       avatar: user.avatar || '',
       planTier: user.planTier,
       creditsUsed: user.creditsUsed,
-      creditsMax: isPro ? Infinity : 3,
+      creditsMax: isPro ? 999999 : 3,
       isPro,
     });
   } catch (error: any) {

@@ -17,6 +17,7 @@ interface InputFormProps {
   onSubmit: (payload: RepurposeRequestPayload) => void;
   isLoading: boolean;
   creditsRemaining: number;
+  isPro?: boolean;
   onOpenUpgradeModal: () => void;
 }
 
@@ -24,6 +25,7 @@ export const InputForm: React.FC<InputFormProps> = ({
   onSubmit,
   isLoading,
   creditsRemaining,
+  isPro = false,
   onOpenUpgradeModal,
 }) => {
   const [inputType, setInputType] = useState<InputType>('YOUTUBE');
@@ -293,8 +295,8 @@ export const InputForm: React.FC<InputFormProps> = ({
         <span>Generate Distribution Bundle ✨</span>
       </Button>
 
-      {/* Credit Warning if exhausted */}
-      {creditsRemaining === 0 && (
+      {/* Credit Warning if exhausted for FREE tier */}
+      {!isPro && creditsRemaining <= 0 && (
         <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
           <span>You have used all 3 free generations.</span>
           <button

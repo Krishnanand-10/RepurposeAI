@@ -128,18 +128,21 @@ export async function generateContentAssets(
   const apiKey = userApiKey || process.env.GEMINI_API_KEY;
 
   if (apiKey && apiKey.trim().length > 10 && apiKey !== 'optional_gemini_api_key_here') {
-    try {
-      const genAI = new GoogleGenerativeAI(apiKey.trim());
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.95,
-          responseMimeType: 'application/json',
-        },
-      });
+    const candidateModels = ['gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-pro'];
+    const genAI = new GoogleGenerativeAI(apiKey.trim());
 
-      const userPrompt = `
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.95,
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const userPrompt = `
 SOURCE TITLE: ${sourceTitle}
 INPUT TYPE: ${inputType}
 SOURCE URL: ${sourceUrl || 'N/A'}
@@ -151,35 +154,36 @@ SOURCE CONTENT TO REPURPOSE:
 ${rawContent.slice(0, 18000)}
 `;
 
-      const result = await model.generateContent([
-        { text: SYSTEM_PROMPT },
-        { text: userPrompt },
-      ]);
+        const result = await model.generateContent([
+          { text: SYSTEM_PROMPT },
+          { text: userPrompt },
+        ]);
 
-      const responseText = result.response.text();
-      const cleaned = responseText
-        .replace(/```json\s*/gi, '')
-        .replace(/```\s*$/gi, '')
-        .trim();
+        const responseText = result.response.text();
+        const cleaned = responseText
+          .replace(/```json\s*/gi, '')
+          .replace(/```\s*$/gi, '')
+          .trim();
 
-      const parsed = JSON.parse(cleaned);
+        const parsed = JSON.parse(cleaned);
 
-      return {
-        title: parsed.title || sourceTitle,
-        summary: parsed.summary || `Multi-platform repurposing for ${sourceTitle}`,
-        sourceUrl,
-        inputType,
-        tone,
-        thumbnailUrl,
-        linkedinPost: parsed.linkedinPost,
-        twitterThread: parsed.twitterThread,
-        videoScripts: parsed.videoScripts,
-        seoMeta: parsed.seoMeta,
-        newsletterBrief: parsed.newsletterBrief,
-        createdAt: new Date().toISOString(),
-      };
-    } catch (err: any) {
-      console.warn('Gemini API call failed or encountered rate limits. Using intelligent fallback synthesizer:', err?.message || err);
+        return {
+          title: parsed.title || sourceTitle,
+          summary: parsed.summary || `Multi-platform repurposing for ${sourceTitle}`,
+          sourceUrl,
+          inputType,
+          tone,
+          thumbnailUrl,
+          linkedinPost: parsed.linkedinPost,
+          twitterThread: parsed.twitterThread,
+          videoScripts: parsed.videoScripts,
+          seoMeta: parsed.seoMeta,
+          newsletterBrief: parsed.newsletterBrief,
+          createdAt: new Date().toISOString(),
+        };
+      } catch (err: any) {
+        console.warn(`Gemini model ${modelName} failed (${err?.message || err}). Trying next candidate...`);
+      }
     }
   }
 

@@ -303,6 +303,7 @@ function DashboardContent() {
                 onSubmit={handleRepurposeSubmit}
                 isLoading={isLoading}
                 creditsRemaining={creditsRemaining}
+                isPro={user.isPro || user.planTier === 'PRO'}
                 onOpenUpgradeModal={() => setIsUpgradeModalOpen(true)}
               />
             </Card>

@@ -87,8 +87,8 @@ graph TD
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/repurpose-ai.git
-cd repurpose-ai
+git clone https://github.com/Krishnanand-10/RepurposeAI.git
+cd RepurposeAI
 ```
 
 ### 2. Install Dependencies
