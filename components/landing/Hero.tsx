@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ArrowRight, Play, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Play, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { InteractivePreview } from './InteractivePreview';
 
@@ -15,12 +15,6 @@ export const Hero: React.FC<HeroProps> = ({ onStartFreeTrial }) => {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-indigo-600/20 via-purple-600/15 to-transparent blur-[140px] pointer-events-none -z-10 rounded-full" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
-        
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold tracking-wide">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>⚡ Powered by Gemini Flash & Next.js 14</span>
-        </div>
 
         {/* Main Headline */}
         <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-[1.15]">
