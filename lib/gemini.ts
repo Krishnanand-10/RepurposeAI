@@ -128,7 +128,7 @@ export async function generateContentAssets(
   const apiKey = userApiKey || process.env.GEMINI_API_KEY;
 
   if (apiKey && apiKey.trim().length > 10 && apiKey !== 'optional_gemini_api_key_here') {
-    const candidateModels = ['gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-pro'];
+    const candidateModels = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-pro'];
     const genAI = new GoogleGenerativeAI(apiKey.trim());
 
     for (const modelName of candidateModels) {
